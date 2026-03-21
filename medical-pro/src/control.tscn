@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://dkfcaksttyq7q"]
+
+[ext_resource type="Script" uid="uid://dvhejjcjp1val" path="res://medical_pro.gd" id="1_5kq6d"]
+
+[sub_resource type="Theme" id="Theme_xpj3s"]
+
+[node name="Control" type="Control" unique_id=1584019426]
+layout_mode = 3
+anchor_right = 1.0
+anchor_bottom = 0.85300004
+offset_left = 3.0
+offset_top = 110.0
+offset_bottom = 144.25598
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_xpj3s")
+script = ExtResource("1_5kq6d")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=370820582]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=219700414]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1201828846]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -59.0
+offset_bottom = 59.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="VBoxContainer" unique_id=144254149]
+layout_mode = 2
+text = "Medical Pro: Clinical Scribe"
+
+[node name="TranscriptInput" type="TextEdit" parent="VBoxContainer" unique_id=1186380001]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+theme_override_colors/caret_background_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.014275181, 0.014275239, 0.0142751895, 1)
+theme_override_colors/background_color = Color(1, 1, 1, 0)
+placeholder_text = "Type here..."
+
+[node name="GenerateButton" type="Button" parent="VBoxContainer" unique_id=1947390686]
+layout_mode = 2
+text = "Generate SOAP Note"
+
+[node name="OutputDisplay" type="TextEdit" parent="VBoxContainer" unique_id=1749490791]
+custom_minimum_size = Vector2(0, 400)
+layout_mode = 2
+theme_override_colors/caret_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/background_color = Color(1, 1, 1, 0)
+editable = false
+
+[node name="HTTPRequest" type="HTTPRequest" parent="." unique_id=908641409]
+
+[connection signal="pressed" from="VBoxContainer/GenerateButton" to="." method="_on_generate_button_pressed"]
