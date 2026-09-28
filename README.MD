@@ -41,45 +41,102 @@ Paste a transcript. Click "Generate SOAP Note". Done.
 
 ---
 
-## The workflow
+## The user flow
 
-```
-Your Transcript
-       ↓
-[Paste into input field]
-       ↓
-[Click "Generate SOAP Note"]
-       ↓
-Sent to Gemini API
-       ↓
-AI extracts: symptoms → physical findings → diagnosis → treatment plan
-       ↓
-[SOAP note appears in output]
-       ↓
-Copy → Paste into EHR
+```mermaid
+flowchart TD
+    A["👤 Clinician"] -->|Pastes transcript| B["📝 Input Field"]
+    B -->|Clicks button| C["⚙️ Generate SOAP Note"]
+    C -->|Validates input| D{Empty?}
+    D -->|Yes| E["❌ Error message"]
+    D -->|No| F["📤 Send to Gemini API"]
+    F -->|HTTPS POST| G["🤖 Gemini AI<br/>3.1 Flash-Lite"]
+    G -->|Processes| H["🧠 Extracts:<br/>Symptoms → Findings →<br/>Diagnosis → Treatment"]
+    H -->|Returns JSON| I["✅ Parse response"]
+    I -->|Display| J["📋 Output: SOAP Note"]
+    J -->|Clinician| K["📋 Copy to EHR"]
+
+    style A fill:#1a1a1a,color:#fff,stroke:#333,stroke-width:2px
+    style B fill:#1a1a1a,color:#fff,stroke:#333,stroke-width:2px
+    style C fill:#1a1a1a,color:#fff,stroke:#333,stroke-width:2px
+    style D fill:#1a1a1a,color:#fff,stroke:#333,stroke-width:2px
+    style E fill:#c41e3a,color:#fff,stroke:#8b0000,stroke-width:2px
+    style F fill:#2d5016,color:#fff,stroke:#1a3a1a,stroke-width:2px
+    style G fill:#1565c0,color:#fff,stroke:#0c3c88,stroke-width:2px
+    style H fill:#1565c0,color:#fff,stroke:#0c3c88,stroke-width:2px
+    style I fill:#2d5016,color:#fff,stroke:#1a3a1a,stroke-width:2px
+    style J fill:#2d5016,color:#fff,stroke:#1a3a1a,stroke-width:2px
+    style K fill:#1a1a1a,color:#fff,stroke:#333,stroke-width:2px
 ```
 
 ---
 
 ## System architecture
 
-```
-Godot 4.6 (UI)
-   ↓
-medical_pro.gd (Logic)
-   ↓
-HTTPRequest (sends POST)
-   ↓
-Google Gemini 3.1 Flash-Lite API
-   ↓
-JSON response
-   ↓
-Parse & display
+```mermaid
+graph TB
+    subgraph GODOT["Godot 4.6 App"]
+        UI["UI Layer<br/>control.tscn"]
+        LOGIC["GDScript Logic<br/>medical_pro.gd<br/>~60 lines"]
+        HTTP["HTTPRequest<br/>Node"]
+    end
+
+    subgraph EXTERNAL["External"]
+        API["Google Gemini API<br/>generativelanguage.googleapis.com"]
+    end
+
+    subgraph OUTPUT["Result"]
+        SOAP["SOAP Note<br/>Formatted & Ready"]
+    end
+
+    UI -->|User input| LOGIC
+    LOGIC -->|Constructs prompt| HTTP
+    HTTP -->|POST JSON| API
+    API -->|Returns JSON| HTTP
+    HTTP -->|Signal callback| LOGIC
+    LOGIC -->|Parse & format| UI
+    UI -->|Display| SOAP
+
+    style GODOT fill:#2c2c2c,color:#fff,stroke:#666,stroke-width:2px
+    style UI fill:#1a1a1a,color:#fff,stroke:#444
+    style LOGIC fill:#1a1a1a,color:#fff,stroke:#444
+    style HTTP fill:#1a1a1a,color:#fff,stroke:#444
+    style API fill:#1565c0,color:#fff,stroke:#0c3c88,stroke-width:2px
+    style SOAP fill:#2d5016,color:#fff,stroke:#1a3a1a,stroke-width:2px
+    style OUTPUT fill:#2c2c2c,color:#fff,stroke:#666,stroke-width:2px
+    style EXTERNAL fill:#2c2c2c,color:#fff,stroke:#666,stroke-width:2px
 ```
 
-**Files that matter:**
-- `medical_pro.gd` — The whole app. ~60 lines of GDScript.
-- `control.tscn` — UI layout (TextEdit inputs, button, output field)
+---
+
+## What happens inside the app
+
+```mermaid
+sequenceDiagram
+    actor User as Clinician
+    participant Godot
+    participant Script as medical_pro.gd
+    participant HTTP as HTTPRequest
+    participant Gemini as Gemini API
+
+    User->>Godot: Pastes transcript
+    User->>Godot: Clicks "Generate"
+    Godot->>Script: _on_generate_pressed()
+    Script->>Script: Validate input
+    alt Input empty
+        Script-->>Godot: Show error
+    else Input valid
+        Script->>Script: Build SOAP prompt
+        Script->>HTTP: request() POST
+        HTTP->>Gemini: Send transcript + prompt
+        Gemini->>Gemini: Process with AI
+        Gemini-->>HTTP: JSON response
+        HTTP->>Script: request_completed signal
+        Script->>Script: Parse JSON
+        Script->>Godot: Display SOAP note
+        Godot-->>User: Show output
+    end
+```
 
 ---
 
@@ -241,5 +298,3 @@ MIT. Use it. Fork it. Change it. Just include the license.
 - Gemini API: [ai.google.dev/docs](https://ai.google.dev/docs)
 
 ---
-
-Made by someone who wanted faster clinical notes.
