@@ -1,350 +1,245 @@
 # Medical-Pro
 
-**AI-Powered Clinical Scribe for Godot 4**
+Convert doctor-patient transcripts into structured SOAP notes using Godot 4 and Google's Gemini API.
 
-A lightweight, specialized medical transcription tool built with **Godot 4.6** that transforms raw patient-doctor dialogues into structured **SOAP notes** (Subjective, Objective, Assessment, Plan) using Google's **Gemini 3.1 Flash-Lite API**.
-
-Perfect for clinics, hospitals, and telemedicine platforms that need instant, professional clinical documentation from voice transcripts.
+Just paste a transcript, click a button, get a formatted clinical note. That's it.
 
 ---
 
-## Features
+## What it does
 
-- ✅ **Real-time AI Processing** — Instant SOAP note generation from raw transcripts
-- ✅ **Professional Formatting** — Automatically structures notes into clinical standards
-- ✅ **Lightweight & Fast** — Gemini 3.1 Flash-Lite optimized for speed
-- ✅ **Standalone Godot App** — No external dependencies, runs on Windows/Mac/Linux
-- ✅ **Modular GDScript** — Signal-based architecture for easy extension
-- ✅ **Temperature Control** — Configurable AI behavior (0.1 = professional, 1.0 = creative)
+You have a recording of a doctor and patient talking. You transcribe it. You paste it into Medical-Pro. It sends it to Gemini, gets back a SOAP note (Subjective, Objective, Assessment, Plan) that's already organized and ready to drop into an EHR.
+
+No clicking around. No manual formatting. No "please provide more details."
 
 ---
 
-## Quick Start
+## How to use it
 
-### 1. **Clone & Open**
+### 1. Get the code
 ```bash
 git clone https://github.com/yourusername/medical-pro.git
-# Open in Godot 4.6+
-# File → Open Project → select medical-pro folder
+cd medical-pro
 ```
 
-### 2. **Get a Gemini API Key**
-- Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
-- Create a new API key
+### 2. Get an API key
+- Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+- Click "+ Create API Key"
 - Copy it
 
-### 3. **Configure & Run**
-- Open `medical_pro.gd`
-- Find line: `var api_key = "YOUR_KEY_HERE"`
-- Paste your key
-- Click ▶️ Run Project
+### 3. Add your key to medical_pro.gd
+Open `medical_pro.gd`, find line 6:
+```gdscript
+var api_key = "REDACTED_API_KEY"
+```
+Replace with yours.
 
-**Done!** Paste a transcript, click "Generate SOAP Note", get output.
+### 4. Run it
+Open the project in Godot 4.6+ and press ▶️
+
+Paste a transcript. Click "Generate SOAP Note". Done.
 
 ---
 
-## How It Works
+## The workflow
 
-```mermaid
-flowchart TD
-    A["👤 Doctor/Clinician"] -->|Pastes transcript| B["📝 Transcript Input<br/>TextEdit"]
-    B -->|User clicks| C["⚙️ Generate Button"]
-    C -->|Sends to API| D["🌐 Google Gemini API<br/>3.1 Flash-Lite"]
-    D -->|Processes with prompt| E["🧠 AI Transforms to SOAP<br/>Subjective/Objective/<br/>Assessment/Plan"]
-    E -->|Returns JSON| F["📋 Parse Response"]
-    F -->|Displays formatted| G["📤 Output Display<br/>Read-only TextEdit"]
-    G -->|User can| H["📋 Copy/Export SOAP Note"]
-
-    style A fill:#e8f4f8,color:#000,stroke:#0066cc
-    style B fill:#fff4e6,color:#000,stroke:#ff9800
-    style C fill:#fff4e6,color:#000,stroke:#ff9800
-    style D fill:#f3e5f5,color:#fff,stroke:#7b1fa2
-    style E fill:#f3e5f5,color:#fff,stroke:#7b1fa2
-    style F fill:#e8f5e9,color:#000,stroke:#2e7d32
-    style G fill:#e8f5e9,color:#000,stroke:#2e7d32
-    style H fill:#c8e6c9,color:#000,stroke:#1b5e20
 ```
-
-**The process:**
-
-1. **Input** — Clinician pastes raw doctor-patient dialogue
-2. **Prompt** — GDScript constructs a system prompt forcing SOAP structure
-3. **API Call** — HTTPRequest sends transcript + prompt to Gemini 3.1
-4. **Processing** — Gemini extracts clinical data and formats into SOAP sections
-5. **Output** — JSON response parsed and displayed as formatted SOAP note
-6. **Export** — User copies the note to clipboard or their EHR system
+Your Transcript
+       ↓
+[Paste into input field]
+       ↓
+[Click "Generate SOAP Note"]
+       ↓
+Sent to Gemini API
+       ↓
+AI extracts: symptoms → physical findings → diagnosis → treatment plan
+       ↓
+[SOAP note appears in output]
+       ↓
+Copy → Paste into EHR
+```
 
 ---
 
-## Architecture
+## System architecture
 
-```mermaid
-graph TB
-    subgraph UI["Godot 4.6 UI Layer"]
-        TI["TranscriptInput<br/>TextEdit"]
-        BTN["GenerateButton"]
-        OUT["OutputDisplay<br/>Read-only TextEdit"]
-    end
-
-    subgraph LOGIC["GDScript Logic<br/>medical_pro.gd"]
-        READY["_ready<br/>Initialize UI"]
-        PRESS["_on_generate_pressed<br/>Validate & Format"]
-        PROMPT["Build SOAP Prompt<br/>System + User Input"]
-        HTTP["HTTPRequest Signal"]
-    end
-
-    subgraph API["External Services"]
-        GEMINI["Google Gemini API<br/>generativelanguage.googleapis.com<br/>gemini-3.1-flash-lite"]
-    end
-
-    subgraph PARSE["Response Handling"]
-        PARSE_JSON["Parse JSON Response"]
-        EXTRACT["Extract candidates[0].content.parts[0].text"]
-        DISPLAY["Display in OutputDisplay"]
-    end
-
-    TI -->|User pastes| PRESS
-    BTN -->|Click event| PRESS
-    PRESS -->|Validate input| PROMPT
-    PROMPT -->|HTTPRequest| HTTP
-    HTTP -->|POST body| GEMINI
-    GEMINI -->|JSON candidates| PARSE_JSON
-    PARSE_JSON --> EXTRACT
-    EXTRACT --> DISPLAY
-    DISPLAY -->|User copies| OUT
-
-    style UI fill:#e8f4f8,stroke:#0066cc,stroke-width:2px
-    style LOGIC fill:#fff4e6,stroke:#ff9800,stroke-width:2px
-    style API fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    style PARSE fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
 ```
+Godot 4.6 (UI)
+   ↓
+medical_pro.gd (Logic)
+   ↓
+HTTPRequest (sends POST)
+   ↓
+Google Gemini 3.1 Flash-Lite API
+   ↓
+JSON response
+   ↓
+Parse & display
+```
+
+**Files that matter:**
+- `medical_pro.gd` — The whole app. ~60 lines of GDScript.
+- `control.tscn` — UI layout (TextEdit inputs, button, output field)
+
+---
+
+## Example
+
+**Input (raw transcript):**
+```
+Doctor: What brings you in today?
+Patient: I've had this cough for two weeks. It's dry, keeps me up at night.
+Doctor: Any fever?
+Patient: No, nothing like that. Temperature's been normal.
+Doctor: Let me listen to your chest.
+[sounds] 
+Doctor: Lungs are clear. I think this is viral. Rest, fluids, honey for the cough.
+Patient: How long should it last?
+Doctor: Usually 3-4 weeks. Call if it gets worse or you develop a fever.
+```
+
+**Output (SOAP note):**
+```
+SUBJECTIVE:
+Patient presents with 2-week history of dry cough, worse at night.
+Denies fever. Temperature normal per patient report.
+No dyspnea reported.
+
+OBJECTIVE:
+Vital signs: normal (per exam)
+Lungs: clear to auscultation bilaterally
+
+ASSESSMENT:
+Viral upper respiratory infection / acute cough, likely viral etiology
+
+PLAN:
+1. Conservative management: rest, increased fluid intake
+2. Recommend honey for symptomatic relief of cough
+3. Return precautions: fever development, worsening symptoms, or symptoms
+   lasting >3-4 weeks warrant return visit
+```
+
+That's what it does. Nothing fancy.
 
 ---
 
 ## Installation
 
-### Requirements
-- **Godot 4.6+** ([Download](https://godotengine.org/download/))
-- **Internet connection** (for Gemini API)
-- **Google Gemini API Key** (free tier available)
+**You need:**
+- Godot 4.6 or newer
+- Internet (for the API)
+- A Gemini API key (free)
 
-### Setup Steps
+**Don't do:**
+- Don't commit your API key to GitHub
+- Use an environment variable instead:
 
-1. **Clone the repo**
-   ```bash
-   git clone https://github.com/yourusername/medical-pro.git
-   cd medical-pro
-   ```
-
-2. **Open in Godot**
-   - Launch Godot 4.6
-   - File → Open Project
-   - Select `medical-pro` folder
-   - Click "Open"
-
-3. **Get API Key**
-   - Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-   - Click "+ Create API Key"
-   - Select your project (or create a new one)
-   - Copy the key
-
-4. **Add API Key to project**
-   - Open `medical_pro.gd` in the script editor
-   - Find line 7: `var api_key = "REDACTED_API_KEY"`
-   - Replace with your own key
-   - **⚠️ WARNING:** Don't commit this key to GitHub! Use environment variables for production.
-
-5. **Run the project**
-   - Click ▶️ at top right
-   - Enter a medical transcript in the input field
-   - Click "Generate SOAP Note"
-   - View formatted output
-
----
-
-## Usage
-
-### Basic Workflow
-
-**Input example:**
-```
-Doctor: Good morning, how are you feeling today?
-Patient: I've had a persistent dry cough for about 2 weeks. It's worse at night. No fever though.
-Doctor: Any shortness of breath?
-Patient: A little when climbing stairs, but nothing severe.
-Doctor: Let me listen to your lungs...
-[continues dialogue...]
+```bash
+export GEMINI_API_KEY="your_actual_key"
+godot
 ```
 
-**Output (SOAP Note):**
-```
-SUBJECTIVE:
-Patient presents with chief complaint of persistent dry cough 
-for 2 weeks, worse at night. Denies fever. Reports mild 
-dyspnea with exertion (stair climbing). [...]
-
-OBJECTIVE:
-Vital signs: BP 120/80, HR 78, RR 16, O2 98% on RA
-Physical exam: Lungs clear to auscultation bilaterally [...]
-
-ASSESSMENT:
-1. Acute cough, likely viral upper respiratory infection
-2. Mild exertional dyspnea - likely secondary to cough [...]
-
-PLAN:
-1. Reassurance and supportive care
-2. Recommend humidifier, cough suppressants as needed
-3. Follow up in 1 week or sooner if symptoms worsen [...]
-```
-
-### Configuration
-
-Edit `medical_pro.gd` to customize behavior:
-
+Then in `medical_pro.gd`:
 ```gdscript
-# Line 20: Adjust AI "personality" (lower = more professional)
-"temperature": 0.1,  # 0.1 = clinical, 0.7 = conversational
-
-# Line 21: Max response length
-"maxOutputTokens": 1000,  # Increase for longer notes
-
-# Line 6: Swap API version
-# Current: gemini-3.1-flash-lite
-# Alternative: gemini-2.0-flash (faster)
+var api_key = OS.get_environment("GEMINI_API_KEY")
 ```
 
 ---
 
-## API Pricing
+## Tuning
 
-**Google Gemini API** (March 2026 rates):
-- **Free tier:** 15 requests/minute, unlimited monthly requests
-- **Paid:** $0.075 per 1M input tokens, $0.30 per 1M output tokens
+Open `medical_pro.gd`. Change these if you want:
 
-A typical medical transcript → SOAP note ≈ 500-1000 tokens = **$0.00003-0.00006 per note**
+```gdscript
+# Line 20: How "creative" the AI is (0.1 = strict, 1.0 = loose)
+"temperature": 0.1,
 
-[Gemini Pricing](https://ai.google.dev/pricing)
+# Line 21: How long the response can be
+"maxOutputTokens": 1000,
+```
+
+For a more detailed note, raise `maxOutputTokens` to 2000.
+For stricter formatting, lower `temperature` to 0.05.
 
 ---
 
-## Extending Medical-Pro
+## API pricing
 
-### Add Custom Sections
-Edit the system prompt in `_on_generate_pressed()`:
-```gdscript
-var system_command = """
-TASK: Convert transcript to structured note.
-FORMAT: Subjective, Objective, Assessment, Plan, Medications, ReferralNotes.
-RULES: Use clinical terminology. Be concise.
-"""
-```
+Gemini's free tier gives you 15 requests/minute, unlimited monthly.
 
-### Add Export Formats
+If you hit that: ~$0.00005 per note. Not expensive.
+
+[Check current pricing](https://ai.google.dev/pricing)
+
+---
+
+## Common issues
+
+**"Error: Input is empty"**
+You didn't paste anything. Paste a transcript first.
+
+**"API Error (401)"**
+Your key is wrong or expired. Get a new one from AI Studio.
+
+**"Empty response"**
+Transcript was too short or unclear. Try a longer example.
+
+**Godot won't open the project**
+You're on Godot 4.5 or older. Download 4.6+.
+
+---
+
+## Extending it
+
+**Want PDF export?**
 ```gdscript
-func export_to_pdf():
-    # Use GD.print or file I/O to save output
-    var file = FileAccess.open("soap_note.txt", FileAccess.WRITE)
+func save_note():
+    var file = FileAccess.open("note.txt", FileAccess.WRITE)
     file.store_string(output_field.text)
 ```
 
-### Batch Processing
-Extend HTTPRequest to handle multiple transcripts in a loop.
+**Want to send to an EHR API?**
+Add another HTTPRequest and send the output to your EHR endpoint.
 
-### Integration with EHR
-Parse output and POST to your EHR API endpoint instead of displaying locally.
-
----
-
-## Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| "Error: Input is empty" | Paste a transcript first, then click "Generate" |
-| "API Error (401)" | Check your API key in `medical_pro.gd` |
-| "Empty response from Gemini" | Transcript might be too short/unclear. Try a longer example. |
-| "Engine: Processing..." hangs | Check internet connection. Gemini API might be slow. |
-| Godot won't open project | Ensure you're using Godot 4.6+. Download from [godotengine.org](https://godotengine.org) |
+**Want batch processing?**
+Loop over multiple transcripts and generate notes in sequence.
 
 ---
 
-## Security & Best Practices
+## What this is and isn't
 
-⚠️ **Never commit your API key to GitHub!**
+**This is:**
+- A tool for documentation. Saves time formatting.
+- A starting point. Customize it for your workflow.
 
-Instead, use environment variables:
-
-```gdscript
-# medical_pro.gd (revised)
-var api_key = OS.get_environment("GEMINI_API_KEY")
-
-if api_key.is_empty():
-    output_field.text = "Error: Set GEMINI_API_KEY environment variable"
-    return
-```
-
-Before running:
-```bash
-# macOS/Linux
-export GEMINI_API_KEY="your_key_here"
-godot
-
-# Windows (PowerShell)
-$env:GEMINI_API_KEY="your_key_here"
-godot
-```
+**This isn't:**
+- A medical device. Verify AI output with a real clinician.
+- HIPAA-compliant out of the box. Godot doesn't encrypt data at rest. Add that if you need it.
+- A replacement for clinical judgment. The AI can miss things.
 
 ---
 
-## Tech Stack
+## Stack
 
-| Component | Details |
-|-----------|---------|
-| **Engine** | Godot 4.6 |
-| **Language** | GDScript |
-| **AI/ML** | Google Gemini 3.1 Flash-Lite API |
-| **HTTP** | Built-in HTTPRequest node |
-| **UI Framework** | Godot Scene System (Nodes) |
-| **Version Control** | Git / GitHub |
-
----
-
-## Roadmap
-
-- [ ] Batch transcript processing
-- [ ] PDF export with formatting
-- [ ] EHR system integrations (Epic, Cerner)
-- [ ] Voice-to-text input (streaming)
-- [ ] Custom SOAP templates per specialty
-- [ ] Local caching of generated notes
-- [ ] Web version (Godot HTML5 export)
-
----
-
-## Contributing
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+- **Engine:** Godot 4.6
+- **Language:** GDScript
+- **API:** Google Gemini 3.1 Flash-Lite
+- **HTTP:** Godot's built-in HTTPRequest node
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) file.
-
-**Medical-Pro is a tool for documentation assistance. Always verify AI-generated clinical notes with qualified healthcare professionals before use.**
+MIT. Use it. Fork it. Change it. Just include the license.
 
 ---
 
-## Support
+## Questions?
 
-- **Issues & Bugs:** [GitHub Issues](https://github.com/yourusername/medical-pro/issues)
-- **Questions:** Discussions tab or email
-- **Godot Docs:** [docs.godotengine.org](https://docs.godotengine.org)
-- **Gemini API Docs:** [ai.google.dev](https://ai.google.dev/docs)
+- Bugs: [GitHub Issues](https://github.com/yourusername/medical-pro/issues)
+- Godot help: [docs.godotengine.org](https://docs.godotengine.org)
+- Gemini API: [ai.google.dev/docs](https://ai.google.dev/docs)
 
 ---
 
-Made with ❤️ for clinicians, by developers. **Medical-Pro v1.0.0** (March 2026)
+Made by someone who wanted faster clinical notes.
