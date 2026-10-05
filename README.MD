@@ -18,8 +18,8 @@ No clicking around. No manual formatting. No "please provide more details."
 
 ### 1. Get the code
 ```bash
-git clone https://github.com/yourusername/medical-pro.git
-cd medical-pro
+git clone https://github.com/JoshuaOmosa/Medical-Pro.git
+cd Medical-Pro/medical-pro
 ```
 
 ### 2. Get an API key
@@ -27,12 +27,18 @@ cd medical-pro
 - Click "+ Create API Key"
 - Copy it
 
-### 3. Add your key to medical_pro.gd
-Open `medical_pro.gd`, find line 6:
-```gdscript
-var api_key = "REDACTED_API_KEY"
+### 3. Set your key as an environment variable
+The app reads the key from `GEMINI_API_KEY` when it starts, so the key never lives in the code.
+
+```powershell
+# Windows (PowerShell)
+$env:GEMINI_API_KEY = "your_key"
 ```
-Replace with yours.
+```bash
+# macOS / Linux
+export GEMINI_API_KEY="your_key"
+```
+Launch Godot from that same terminal so it inherits the variable.
 
 ### 4. Run it
 Open the project in Godot 4.6+ and press ▶️
@@ -196,10 +202,7 @@ export GEMINI_API_KEY="your_actual_key"
 godot
 ```
 
-Then in `medical_pro.gd`:
-```gdscript
-var api_key = OS.get_environment("GEMINI_API_KEY")
-```
+The script already reads it with `OS.get_environment("GEMINI_API_KEY")`. If it's missing, the app tells you on startup instead of failing silently.
 
 ---
 
@@ -208,10 +211,10 @@ var api_key = OS.get_environment("GEMINI_API_KEY")
 Open `medical_pro.gd`. Change these if you want:
 
 ```gdscript
-# Line 20: How "creative" the AI is (0.1 = strict, 1.0 = loose)
+# How "creative" the AI is (0.1 = strict, 1.0 = loose)
 "temperature": 0.1,
 
-# Line 21: How long the response can be
+# How long the response can be
 "maxOutputTokens": 1000,
 ```
 
@@ -222,7 +225,7 @@ For stricter formatting, lower `temperature` to 0.05.
 
 ## API pricing
 
-Gemini's free tier gives you 15 requests/minute, unlimited monthly.
+Gemini has a free tier with per-minute rate limits; check the pricing page for current numbers.
 
 If you hit that: ~$0.00005 per note. Not expensive.
 

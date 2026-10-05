@@ -6,32 +6,42 @@ extends Control
 @onready var http_request = $HTTPRequest
 
 # --- API CONFIGURATION ---
-# Replace this with the key you just got from AI Studio
-var api_key = "REDACTED_API_KEY" 
-var api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=" + api_key
+# The key is read from the GEMINI_API_KEY environment variable at runtime so it
+# never ends up in source control. Set it before launching Godot, e.g.
+#   PowerShell:  $env:GEMINI_API_KEY = "your_key"
+#   bash/zsh:    export GEMINI_API_KEY="your_key"
+const MODEL := "gemini-3.1-flash-lite"
+const API_URL := "https://generativelanguage.googleapis.com/v1/models/%s:generateContent" % MODEL
+
+var api_key: String = OS.get_environment("GEMINI_API_KEY")
 
 func _ready():
 	# Connect signals
 	$VBoxContainer/GenerateButton.pressed.connect(_on_generate_pressed)
 	http_request.request_completed.connect(_on_request_completed)
-	output_field.text = "System Ready (Gemini Engine). Enter transcript below."
+	if api_key.is_empty():
+		output_field.text = "GEMINI_API_KEY is not set. Set it and restart the app."
+	else:
+		output_field.text = "System Ready (Gemini Engine). Enter transcript below."
 
 func _on_generate_pressed():
+	if api_key.is_empty():
+		output_field.text = "Error: GEMINI_API_KEY is not set."
+		return
 	if input_field.text.strip_edges().is_empty():
 		output_field.text = "Error: Input is empty."
 		return
 	
 	output_field.text = "Engine: Processing Medical Transcript..."
 	
-	# 1. NEW 2026 STABLE ENDPOINT
-	var prod_url = "https://generativelanguage.googleapis.com/v1/models/gemini-3.1-flash-lite:generateContent?key=" + api_key
-	
-	# 2. FORCE-TASK PROMPT (Prevents the "Please provide transcript" response)
+	# Tell the model exactly what to produce so it doesn't reply with questions
+	# or ask for the transcript again.
 	var system_command = "TASK: Convert transcript to SOAP note. FORMAT: Subjective, Objective, Assessment, Plan. "
 	var force_output = "INSTRUCTION: Do not ask questions. Do not introduce yourself. Generate the note NOW. "
-	var full_prompt = system_command + force_output + "\n\nTRANSCRIPT: " + input_field.text
+	var full_prompt = system_command + force_output + "
+
+TRANSCRIPT: " + input_field.text
 	
-	# 3. UPDATED JSON STRUCTURE
 	var body = JSON.stringify({
 		"contents": [{
 			"parts": [{
@@ -39,13 +49,14 @@ func _on_generate_pressed():
 			}]
 		}],
 		"generationConfig": {
-			"temperature": 0.1, # Lower temperature = more professional/less chatty
+			"temperature": 0.1, # Lower temperature = more consistent, less chatty output
 			"maxOutputTokens": 1000
 		}
 	})
 	
-	var headers = ["Content-Type: application/json"]
-	http_request.request(prod_url, headers, HTTPClient.METHOD_POST, body)
+	# Sending the key as a header keeps it out of URLs and request logs.
+	var headers = ["Content-Type: application/json", "x-goog-api-key: " + api_key]
+	http_request.request(API_URL, headers, HTTPClient.METHOD_POST, body)
 
 func _on_request_completed(_result, response_code, _headers, body):
 	var response_string = body.get_string_from_utf8()
